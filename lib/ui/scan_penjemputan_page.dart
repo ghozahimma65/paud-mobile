@@ -76,7 +76,7 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
 
     try {
       // ⚠️ PASTIKAN IP LAPTOP BENAR
-      final url = Uri.parse('http://192.168.18.36:8000/api/penjemputan');
+      final url = Uri.parse('http://192.168.18.36:8000/api/guru/scan-jemput');
 
       final response = await http
           .post(
@@ -86,7 +86,7 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
             },
-            body: jsonEncode({'siswa_id': siswaId}),
+            body: jsonEncode({'qr_code': siswaId}),
           )
           .timeout(const Duration(seconds: 10));
 
@@ -200,24 +200,6 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
           // 4. LOADING
           if (_isProcessing) const Center(child: CircularProgressIndicator()),
         ],
-      ),
-
-      // 5. TOMBOL SIMULASI (FITUR BARU ANTIGRAVITY!)
-      // Gunakan tombol ini kalau kamera susah baca layar laptop
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Pura-pura kita menscan QR dengan isi "SISWA-1"
-          _onDetect(
-            BarcodeCapture(
-              barcodes: [
-                Barcode(rawValue: "SISWA-1", format: BarcodeFormat.qrCode),
-              ],
-            ),
-          );
-        },
-        label: const Text("Simulasi Scan (Tes)"),
-        icon: const Icon(Icons.touch_app),
-        backgroundColor: Colors.orange,
       ),
     );
   }

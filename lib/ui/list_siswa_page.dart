@@ -72,9 +72,21 @@ class _ListSiswaPageState extends State<ListSiswaPage> {
                       siswa.namaSiswa ?? "-",
                       style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
                     ),
-                    subtitle: Text(
-                      "Kelas: ${siswa.namaKelas} | NIS: ${siswa.nis}",
-                      style: GoogleFonts.poppins(fontSize: 12),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Kelas: ${siswa.namaKelas} | NIS: ${siswa.nis}",
+                          style: GoogleFonts.poppins(fontSize: 12),
+                        ),
+                        Text(
+                          "Orang Tua / Wali: ${siswa.namaWali ?? '-'}",
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
                     ),
                     trailing: const Icon(
                       Icons.arrow_forward_ios,

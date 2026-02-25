@@ -4,6 +4,8 @@ class SiswaModel {
   String? nis;
   String? namaKelas; // Untuk nampung 'Gatotkaca', dll
   String? namaWali;
+  String? alamat;
+  List<dynamic>? anekdots;
 
   SiswaModel({
     this.id,
@@ -11,6 +13,8 @@ class SiswaModel {
     this.nis,
     this.namaKelas,
     this.namaWali,
+    this.alamat,
+    this.anekdots,
   });
 
   factory SiswaModel.fromJson(Map<String, dynamic> json) {
@@ -25,6 +29,8 @@ class SiswaModel {
               : 'Tanpa Kelas',
       namaWali:
           json['wali_murid'] != null ? json['wali_murid']['nama_wali'] : '-',
+      alamat: json['alamat'],
+      anekdots: json['anekdots'] ?? [],
     );
   }
 }

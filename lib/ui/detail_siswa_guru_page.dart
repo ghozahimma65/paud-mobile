@@ -45,10 +45,55 @@ class DetailSiswaGuruPage extends StatelessWidget {
                     "NIS: ${siswa.nis}",
                     style: GoogleFonts.poppins(color: Colors.grey),
                   ),
+                  const SizedBox(height: 10),
+                  Text(
+                    "Orang Tua: ${siswa.namaWali ?? "-"}",
+                    style: GoogleFonts.poppins(fontSize: 14),
+                  ),
+                  Text(
+                    "Alamat: ${siswa.alamat ?? "-"}",
+                    style: GoogleFonts.poppins(fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
+
+            // Daftar Anekdot Siswa
+            if (siswa.anekdots != null && siswa.anekdots!.isNotEmpty) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Rekap Penilaian Anekdot",
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              ...siswa.anekdots!.map((anekdot) {
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  child: ListTile(
+                    title: Text(
+                      anekdot['kejadian_teramati'] ?? 'Tidak ada kejadian',
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                    ),
+                    subtitle: Text(
+                      "Analisis: ${anekdot['analisis_capaian'] ?? '-'}\nTanggal: ${anekdot['tanggal'] ?? '-'}",
+                      style: GoogleFonts.poppins(fontSize: 12),
+                    ),
+                    isThreeLine: true,
+                  ),
+                );
+              }),
+              const SizedBox(height: 20),
+            ],
+
+            const Divider(),
+            const SizedBox(height: 10),
 
             // Menu Aksi Guru
             _buildMenuGuru(
