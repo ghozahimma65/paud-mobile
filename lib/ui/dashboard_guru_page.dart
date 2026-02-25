@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
+import 'package:intl/intl.dart';
 // --- IMPORT MENU KAMU ---
 import 'rencana_kunjungan_page.dart';
 import 'list_siswa_page.dart';
@@ -249,11 +249,23 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
                         separatorBuilder: (context, index) => const Divider(),
                         itemBuilder: (context, index) {
                           final item = _listPengumuman[index];
-                          String tanggalInfo = item['tanggal_mulai'] ?? "";
+
+                          String formatTgl(String? tgl) {
+                            if (tgl == null) return "";
+                            try {
+                              return DateFormat(
+                                'dd MMM yyyy',
+                              ).format(DateTime.parse(tgl));
+                            } catch (e) {
+                              return tgl.split('T')[0];
+                            }
+                          }
+
+                          String tanggalInfo = formatTgl(item['tanggal_mulai']);
                           if (item['tanggal_mulai'] != null &&
                               item['tanggal_selesai'] != null) {
                             tanggalInfo =
-                                "${item['tanggal_mulai']} s/d ${item['tanggal_selesai']}";
+                                "${formatTgl(item['tanggal_mulai'])} s/d ${formatTgl(item['tanggal_selesai'])}";
                           }
 
                           return Row(
