@@ -4,10 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-// --- PASTIKAN IMPORT INI SESUAI DENGAN NAMA FILE KAMU ---
+// --- IMPORT MENU KAMU ---
+import 'rencana_kunjungan_page.dart';
 import 'list_siswa_page.dart';
 import 'scan_penjemputan_page.dart';
 import '../screens/login_screen.dart';
+// IMPORT FILE BARU KITA (Jangan dihapus ya, file-nya kita bikin di bawah)
+import 'riwayat_penilaian_page.dart';
 
 class DashboardGuruPage extends StatefulWidget {
   const DashboardGuruPage({super.key});
@@ -19,8 +22,6 @@ class DashboardGuruPage extends StatefulWidget {
 class _DashboardGuruPageState extends State<DashboardGuruPage> {
   String? namaGuru;
   bool _isLoading = true;
-
-  // Variabel untuk Pengumuman
   List<dynamic> _listPengumuman = [];
   bool _loadingPengumuman = true;
 
@@ -28,10 +29,9 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
   void initState() {
     super.initState();
     _loadUserData();
-    _fetchPengumuman(); // Panggil fungsi ambil pengumuman
+    _fetchPengumuman();
   }
 
-  // 1. Ambil Nama Guru dari Shared Prefs
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     final dataString = prefs.getString('user_data');
@@ -44,27 +44,29 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
     }
   }
 
-  // 2. Ambil Data Pengumuman dari API
   Future<void> _fetchPengumuman() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
     try {
-      // ⚠️ PENTING: GANTI IP INI SESUAI HASIL 'ipconfig' DI LAPTOP KAMU
-      // Jika pakai Emulator Android Studio: 10.0.2.2
-      // Jika pakai HP Fisik: Harus satu WiFi dan pakai IP Laptop (misal 192.168.x.x atau 10.131.x.x)
       final response = await http.get(
-        Uri.parse('http://10.131.166.25:8000/api/pengumuman'),
+        Uri.parse('http://192.168.18.36:8000/api/pengumuman'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
         },
       );
 
+      // --- PASANG CCTV PENGUMUMAN ---
+      print("=== CEK API PENGUMUMAN ===");
+      print("Status Code: ${response.statusCode}");
+      print("Body JSON: ${response.body}");
+      print("==========================");
+
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         setState(() {
-          _listPengumuman = json['data'];
+          _listPengumuman = json['data'] ?? json;
           _loadingPengumuman = false;
         });
       } else {
@@ -90,261 +92,363 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // --- HEADER ---
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: const Color(
+        0xFFF5F7FA,
+      ), // Latar belakang abu-abu sangat soft
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- HEADER GRADIENT MEWAH ---
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(
+                top: 60,
+                left: 20,
+                right: 20,
+                bottom: 40,
+              ),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF4A00E0),
+                    Color(0xFF8E2DE2),
+                  ], // Gradasi Ungu Modern
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Selamat Pagi,",
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      Text(
-                        namaGuru ?? "Bu Guru",
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 25,
+                            backgroundColor: Colors.white.withOpacity(0.2),
+                            child: const Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Selamat Datang,",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                              Text(
+                                namaGuru ?? "Bu Guru",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                       IconButton(
                         icon: const Icon(
-                          Icons.notifications_none,
-                          color: Colors.purple,
+                          Icons.logout,
+                          color: Colors.white,
                           size: 28,
                         ),
-                        onPressed: () {},
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.logout, color: Colors.red),
                         onPressed: _logout,
                       ),
                     ],
                   ),
+                  const SizedBox(height: 25),
+                  // SEARCH BAR DI DALAM HEADER
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 10,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: "Cari data siswa...",
+                        hintStyle: GoogleFonts.poppins(color: Colors.grey),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Colors.purple,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 15,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
+            ),
 
-              const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-              // --- SEARCH BAR ---
-              TextField(
-                decoration: InputDecoration(
-                  hintText: "Search",
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // --- KOTAK INFORMASI (PENGUMUMAN) ---
-              Text(
+            // --- KOTAK PENGUMUMAN ELEGAN ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
                 "Informasi Sekolah",
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 10),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              height: 150,
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.shade200,
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child:
+                  _loadingPengumuman
+                      ? const Center(child: CircularProgressIndicator())
+                      : _listPengumuman.isEmpty
+                      ? Center(
+                        child: Text(
+                          "Tidak ada pengumuman terbaru",
+                          style: GoogleFonts.poppins(color: Colors.grey),
+                        ),
+                      )
+                      : ListView.separated(
+                        padding: const EdgeInsets.all(15),
+                        itemCount: _listPengumuman.length,
+                        separatorBuilder: (context, index) => const Divider(),
+                        itemBuilder: (context, index) {
+                          final item = _listPengumuman[index];
+                          String tanggalInfo = item['tanggal_mulai'] ?? "";
+                          if (item['tanggal_mulai'] != null &&
+                              item['tanggal_selesai'] != null) {
+                            tanggalInfo =
+                                "${item['tanggal_mulai']} s/d ${item['tanggal_selesai']}";
+                          }
 
-              Container(
-                height: 160,
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.shade200,
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                  border: Border.all(color: Colors.grey.shade100),
-                ),
-                child:
-                    _loadingPengumuman
-                        ? const Center(child: CircularProgressIndicator())
-                        : _listPengumuman.isEmpty
-                        ? Center(
-                          child: Text(
-                            "Tidak ada pengumuman terbaru",
-                            style: GoogleFonts.poppins(color: Colors.grey),
-                          ),
-                        )
-                        : ListView.separated(
-                          itemCount: _listPengumuman.length,
-                          separatorBuilder: (context, index) => const Divider(),
-                          itemBuilder: (context, index) {
-                            final item = _listPengumuman[index];
-
-                            // Logika Tanggal
-                            String tanggalInfo = "";
-                            if (item['tanggal_mulai'] != null &&
-                                item['tanggal_selesai'] != null) {
-                              tanggalInfo =
-                                  "${item['tanggal_mulai']} s/d ${item['tanggal_selesai']}";
-                            } else if (item['tanggal_mulai'] != null) {
-                              tanggalInfo = item['tanggal_mulai'];
-                            }
-
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // JUDUL
-                                Text(
-                                  item['judul'] ?? "Tanpa Judul",
-                                  style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: Colors.black87,
-                                  ),
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.shade50,
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                                const SizedBox(height: 4),
-
-                                // ISI
-                                Text(
-                                  item['isi'] ?? "-",
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade600,
-                                  ),
+                                child: const Icon(
+                                  Icons.campaign,
+                                  color: Colors.orange,
                                 ),
-                                const SizedBox(height: 8),
-
-                                // TANGGAL
-                                Row(
+                              ),
+                              const SizedBox(width: 15),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Icon(
-                                      Icons.calendar_today,
-                                      size: 12,
-                                      color: Colors.blue,
+                                    Text(
+                                      item['judul'] ?? "Tanpa Judul",
+                                      style: GoogleFonts.poppins(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                    const SizedBox(width: 4),
+                                    Text(
+                                      item['isi'] ?? "-",
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
                                     Text(
                                       tanggalInfo,
                                       style: GoogleFonts.poppins(
-                                        fontSize: 11,
-                                        color: Colors.blue,
-                                        fontWeight: FontWeight.w500,
+                                        fontSize: 10,
+                                        color: Colors.blue.shade700,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ],
-                            );
-                          },
-                        ),
-              ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+            ),
 
-              const SizedBox(height: 24),
+            const SizedBox(height: 25),
 
-              // --- MENU KATEGORI ---
-              Text(
-                "Menu Guru",
+            // --- MENU UTAMA (GRID KOTAK-KOTAK MEWAH) ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                "Menu Utama",
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 10),
-
-              _buildMenuItem(
-                title: "Data Kelas",
-                icon: Icons.people_alt,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ListSiswaPage(),
-                    ),
-                  );
-                },
+            ),
+            const SizedBox(height: 15),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GridView.count(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 15,
+                mainAxisSpacing: 15,
+                childAspectRatio: 1.1, // Membuat proporsi kotaknya pas
+                children: [
+                  _buildMenuCard(
+                    title: "Rencana Visit",
+                    icon: Icons.map,
+                    color: Colors.blue,
+                    onTap:
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RencanaKunjunganPage(),
+                          ),
+                        ),
+                  ),
+                  _buildMenuCard(
+                    title: "Input Laporan",
+                    icon: Icons.edit_note,
+                    color: Colors.orange,
+                    onTap:
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ListSiswaPage(),
+                          ),
+                        ),
+                  ),
+                  _buildMenuCard(
+                    title: "Riwayat Nilai",
+                    icon: Icons.history_edu,
+                    color: Colors.purple,
+                    onTap:
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RiwayatPenilaianPage(),
+                          ),
+                        ),
+                  ),
+                  _buildMenuCard(
+                    title: "Data Kelas",
+                    icon: Icons.people_alt,
+                    color: Colors.teal,
+                    onTap:
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ListSiswaPage(),
+                          ),
+                        ),
+                  ),
+                  _buildMenuCard(
+                    title: "Scan Jemput",
+                    icon: Icons.qr_code_scanner,
+                    color: Colors.green,
+                    onTap:
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ScanPenjemputanPage(),
+                          ),
+                        ),
+                  ),
+                ],
               ),
-
-              _buildMenuItem(
-                title: "Input Laporan",
-                icon: Icons.edit_note,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ListSiswaPage(),
-                    ),
-                  );
-                },
-              ),
-
-              _buildMenuItem(
-                title: "Scan Penjemputan",
-                icon: Icons.qr_code_scanner,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ScanPenjemputanPage(),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 30),
+          ],
         ),
       ),
     );
   }
 
-  // Widget Helper
-  Widget _buildMenuItem({
+  // WIDGET BANTUAN UNTUK KOTAK MENU
+  Widget _buildMenuCard({
     required String title,
     required IconData icon,
+    required Color color,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.purple.shade50,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: Colors.purple),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
-        title: Text(
-          title,
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 35, color: color),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: Colors.black87,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: Colors.grey,
-        ),
-        onTap: onTap,
       ),
     );
   }

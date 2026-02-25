@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   final String baseUrl =
-      "http://10.131.166.25:8000/api"; // Ganti ke IP laptop jika pakai HP asli
+      "http://192.168.18.36:8000/api"; // Ganti ke IP laptop jika pakai HP asli
 
   Future<List<SiswaModel>> getSiswa() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();

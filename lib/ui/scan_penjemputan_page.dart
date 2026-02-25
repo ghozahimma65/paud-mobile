@@ -76,7 +76,7 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
 
     try {
       // ⚠️ PASTIKAN IP LAPTOP BENAR
-      final url = Uri.parse('http://10.131.166.25:8000/api/penjemputan');
+      final url = Uri.parse('http://192.168.18.36:8000/api/penjemputan');
 
       final response = await http
           .post(
