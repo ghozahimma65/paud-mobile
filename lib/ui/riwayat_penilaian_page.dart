@@ -148,6 +148,7 @@ class _RiwayatPenilaianPageState extends State<RiwayatPenilaianPage> {
                 ],
               ),
               child: DropdownButtonFormField<String>(
+                isExpanded: true,
                 decoration: InputDecoration(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 20,
@@ -181,6 +182,8 @@ class _RiwayatPenilaianPageState extends State<RiwayatPenilaianPage> {
                     child: Text(
                       "Semua Siswa",
                       style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   ...studentList.map(
@@ -189,6 +192,8 @@ class _RiwayatPenilaianPageState extends State<RiwayatPenilaianPage> {
                       child: Text(
                         st,
                         style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
