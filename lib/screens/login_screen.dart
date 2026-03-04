@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/auth_service.dart';
-import '../ui/dashboard_page.dart'; // Dashboard Wali Murid
+import '../ui/dashboard_wali_page.dart'; // Dashboard Wali Murid (YANG BARU)
 import '../ui/dashboard_guru_page.dart'; // Dashboard Guru (YANG BARU)
 
 class LoginScreen extends StatefulWidget {
@@ -57,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Kalau Wali Murid -> Ke Dashboard Wali
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const DashboardPage()),
+          MaterialPageRoute(builder: (context) => const DashboardWaliPage()),
         );
       }
       // -----------------------------------
