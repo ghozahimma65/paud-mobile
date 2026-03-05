@@ -8,6 +8,8 @@ import 'package:intl/intl.dart';
 
 import '../screens/login_screen.dart';
 import '../services/api_services/api_service.dart';
+import 'riwayat_penilaian_wali_page.dart';
+import 'rapot_wali_page.dart';
 
 class DashboardWaliPage extends StatefulWidget {
   const DashboardWaliPage({super.key});
@@ -23,6 +25,7 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
   String? namaWali;
   Map<String, dynamic>? siswaData;
   Map<String, dynamic>? pengumumanData;
+  Map<String, dynamic>? penjemputanData;
   List<dynamic> progressData = [];
 
   final ApiService _apiService = ApiService();
@@ -66,6 +69,7 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
           siswaData = data['siswa'];
           pengumumanData = data['pengumuman'];
           progressData = data['progress'] ?? [];
+          penjemputanData = data['penjemputan_terakhir'];
           _isLoading = false;
         });
       } else {
@@ -89,7 +93,7 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
     );
   }
 
-  // Cek apakah sudah waktunya menjemput (Jam > 11:00)
+  // 2. SMART NOTIFICATION: Cek apakah sudah waktunya menjemput (Jam >= 11:00)
   bool _isWaktuPulang() {
     final now = DateTime.now();
     return now.hour >= 11;
@@ -130,21 +134,21 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
                               const SizedBox(height: 30),
                             ],
 
+                            if (pengumumanData != null) ...[
+                              _buildSectionTitle("Pengumuman Terbaru"),
+                              const SizedBox(height: 15),
+                              _buildPengumumanCard(),
+                              const SizedBox(height: 30),
+                            ],
+
                             _buildSectionTitle("Progress Perkembangan"),
                             const SizedBox(height: 15),
                             _buildProgressList(),
 
                             const SizedBox(height: 30),
-                            _buildSectionTitle("Informasi & Laporan"),
+                            _buildSectionTitle("Monitoring & Laporan"),
                             const SizedBox(height: 15),
                             _buildMenuGrid(),
-
-                            if (pengumumanData != null) ...[
-                              const SizedBox(height: 30),
-                              _buildSectionTitle("Pengumuman Terbaru"),
-                              const SizedBox(height: 15),
-                              _buildPengumumanCard(),
-                            ],
                             const SizedBox(height: 40),
                           ],
                         ),
@@ -156,7 +160,7 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
     );
   }
 
-  // --- PREMIUM APP BAR ---
+  // --- 1. HEADER & QR CODE: PREMIUM APP BAR ---
   SliverAppBar _buildPremiumAppBar() {
     return SliverAppBar(
       expandedHeight: 140.0,
@@ -184,24 +188,47 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                  Row(
                     children: [
-                      Text(
-                        "Selamat Datang,",
-                        style: GoogleFonts.poppins(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Colors.white.withOpacity(0.3),
+                        backgroundImage:
+                            siswaData != null && siswaData!['foto'] != null
+                                ? NetworkImage(
+                                  '${_apiService.baseUrl.replaceAll('/api', '')}/storage/${siswaData!['foto']}',
+                                )
+                                : null,
+                        child:
+                            siswaData == null || siswaData!['foto'] == null
+                                ? const Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 28,
+                                )
+                                : null,
                       ),
-                      Text(
-                        namaWali ?? "Bunda/Ayah",
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      const SizedBox(width: 15),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "Selamat Datang,",
+                            style: GoogleFonts.poppins(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            namaWali ?? "Bunda/Ayah",
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -237,10 +264,10 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
     );
   }
 
-  // --- ALERT PENJEMPUTAN ---
+  // --- 2. SMART NOTIFICATION ALERT ---
   Widget _buildAlertPenjemputan() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
         color: Colors.amber.shade50,
         borderRadius: BorderRadius.circular(16),
@@ -251,24 +278,13 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
           Icon(Icons.alarm, color: Colors.amber.shade700, size: 30),
           const SizedBox(width: 15),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Waktu Pulang Tiba!",
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.amber.shade900,
-                  ),
-                ),
-                Text(
-                  "Silakan siapkan QR Code di bawah untuk menjemput ananda.",
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.amber.shade800,
-                  ),
-                ),
-              ],
+            child: Text(
+              "⏰ Waktunya Menjemput! QR Code Anda sudah siap digunakan.",
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Colors.amber.shade900,
+              ),
             ),
           ),
         ],
@@ -276,7 +292,7 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
     );
   }
 
-  // --- KARTU QR PENJEMPUTAN ---
+  // --- 1. HEADER & QR CODE: KARTU QR PENJEMPUTAN ---
   Widget _buildQRCard() {
     return Container(
       width: double.infinity,
@@ -336,7 +352,8 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
               border: Border.all(color: Colors.grey.shade200),
             ),
             child: QrImageView(
-              data: "${siswaData!['nis']}",
+              data:
+                  "SISWA-${siswaData!['id']}", // QR Code berisikan SISWA-sekian
               version: QrVersions.auto,
               size: 200.0,
               backgroundColor: Colors.white,
@@ -362,12 +379,32 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
               ),
             ],
           ),
+          if (penjemputanData != null) ...[
+            const SizedBox(height: 15),
+            const Divider(),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.history, size: 14, color: Colors.green.shade600),
+                const SizedBox(width: 5),
+                Text(
+                  "Penjemputan Terakhir: ${DateFormat('dd MMM HH:mm').format(DateTime.parse(penjemputanData!['created_at']))}",
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.green.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
 
-  // --- PROGRESS PERKEMBANGAN ---
+  // --- 3. PROGRESS PERKEMBANGAN (Visualisasi) ---
   Widget _buildProgressList() {
     if (progressData.isEmpty) {
       return Container(
@@ -395,10 +432,19 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
       child: Column(
         children:
             progressData.map((item) {
-              int percent = item['nilai'];
-              Color color = Colors.amber;
-              if (percent >= 75) color = Colors.green;
-              if (percent <= 25) color = Colors.redAccent;
+              int percent = int.parse(item['nilai'].toString());
+
+              // Logika Warna Dinamis: Abu-abu (0), Merah (<50), Orange (<75), Hijau (>=75)
+              Color color;
+              if (percent == 0) {
+                color = Colors.grey.shade400;
+              } else if (percent < 50) {
+                color = Colors.redAccent;
+              } else if (percent < 75) {
+                color = Colors.orange;
+              } else {
+                color = Colors.green;
+              }
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 15),
@@ -444,36 +490,83 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
     );
   }
 
-  // --- MENU UTAMA ---
+  // --- 4. MONITORING MENU (Action Cards) ---
   Widget _buildMenuGrid() {
-    return Row(
+    if (siswaData == null) return const SizedBox();
+
+    return GridView.count(
+      crossAxisCount: 2,
+      crossAxisSpacing: 15,
+      mainAxisSpacing: 15,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       children: [
-        Expanded(
-          child: _buildMenuCard(
-            title: "Laporan Detail",
-            icon: Icons.assignment,
-            color: Colors.blue,
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Fitur Laporan segera hadir!")),
-              );
-            },
-          ),
+        _buildMenuCard(
+          title: "Laporan Anekdot",
+          icon: Icons.assignment,
+          color: Colors.blue,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => RiwayatPenilaianWaliPage(
+                      siswaId: siswaData!['id'],
+                      namaSiswa: siswaData!['nama'],
+                      initialTabIndex: 0,
+                    ),
+              ),
+            );
+          },
         ),
-        const SizedBox(width: 15),
-        Expanded(
-          child: _buildMenuCard(
-            title: "Info Sekolah",
-            icon: Icons.campaign,
-            color: Colors.orange,
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Lihat info pengumuman di bawah."),
-                ),
-              );
-            },
-          ),
+        _buildMenuCard(
+          title: "Ceklis Perkembangan",
+          icon: Icons.checklist,
+          color: Colors.orange,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => RiwayatPenilaianWaliPage(
+                      siswaId: siswaData!['id'],
+                      namaSiswa: siswaData!['nama'],
+                      initialTabIndex: 1,
+                    ),
+              ),
+            );
+          },
+        ),
+        _buildMenuCard(
+          title: "Hasil Karya",
+          icon: Icons.brush,
+          color: Colors.purple,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => RiwayatPenilaianWaliPage(
+                      siswaId: siswaData!['id'],
+                      namaSiswa: siswaData!['nama'],
+                      initialTabIndex: 2,
+                    ),
+              ),
+            );
+          },
+        ),
+        _buildMenuCard(
+          title: "Hasil Rapot",
+          icon: Icons.assignment_turned_in,
+          color: Colors.teal,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => RapotWaliPage(siswaId: siswaData!['id']),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -502,6 +595,7 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
           border: Border.all(color: color.shade50, width: 2),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               padding: const EdgeInsets.all(12),
@@ -511,7 +605,7 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
               ),
               child: Icon(icon, color: color, size: 28),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Text(
               title,
               textAlign: TextAlign.center,

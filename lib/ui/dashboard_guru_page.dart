@@ -11,6 +11,7 @@ import 'scan_penjemputan_page.dart';
 import '../screens/login_screen.dart';
 // IMPORT FILE BARU KITA (Jangan dihapus ya, file-nya kita bikin di bawah)
 import 'riwayat_penilaian_page.dart';
+import 'input_rapot_page.dart';
 
 class DashboardGuruPage extends StatefulWidget {
   const DashboardGuruPage({super.key});
@@ -403,6 +404,18 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => const ScanPenjemputanPage(),
+                          ),
+                        ),
+                  ),
+                  _buildMenuCard(
+                    title: "Input Rapot",
+                    icon: Icons.assignment,
+                    color: Colors.indigo,
+                    onTap:
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const InputRapotPage(),
                           ),
                         ),
                   ),

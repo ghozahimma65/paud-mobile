@@ -16,8 +16,19 @@ class InputCeklisPage extends StatefulWidget {
 class _InputCeklisPageState extends State<InputCeklisPage> {
   bool _isLoading = false;
   String? _selectedHasil;
+  String? _selectedAspek; // NEW: Aspek Perkembangan
   final _indikatorController = TextEditingController();
   final _keteranganController = TextEditingController();
+
+  // Daftar Aspek PAUD
+  final List<String> _listAspek = [
+    "Nilai Agama & Moral",
+    "Fisik Motorik",
+    "Kognitif",
+    "Bahasa",
+    "Sosial Emosional",
+    "Seni",
+  ];
 
   // Skala Penilaian PAUD sesuai kodingan Controller Admin kamu
   final List<Map<String, String>> _listSkala = [
@@ -28,9 +39,13 @@ class _InputCeklisPageState extends State<InputCeklisPage> {
   ];
 
   Future<void> _simpanCeklis() async {
-    if (_selectedHasil == null || _indikatorController.text.isEmpty) {
+    if (_selectedHasil == null ||
+        _indikatorController.text.isEmpty ||
+        _selectedAspek == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Indikator dan Hasil harus diisi!")),
+        const SnackBar(
+          content: Text("Aspek, Indikator, dan Hasil harus diisi!"),
+        ),
       );
       return;
     }
@@ -51,6 +66,7 @@ class _InputCeklisPageState extends State<InputCeklisPage> {
         body: jsonEncode({
           'siswa_id': widget.siswa.id,
           'tanggal': DateTime.now().toString().split(' ')[0],
+          'aspek_perkembangan': _selectedAspek, // TAMBAHAN REQ
           'indikator': _indikatorController.text,
           'hasil': _selectedHasil,
           'keterangan': _keteranganController.text,
@@ -90,6 +106,23 @@ class _InputCeklisPageState extends State<InputCeklisPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildLabel("Aspek Perkembangan"),
+            DropdownButtonFormField<String>(
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: "Pilih Aspek PAUD",
+              ),
+              value: _selectedAspek,
+              items:
+                  _listAspek.map((aspek) {
+                    return DropdownMenuItem(value: aspek, child: Text(aspek));
+                  }).toList(),
+              onChanged: (val) {
+                setState(() => _selectedAspek = val);
+              },
+            ),
+            const SizedBox(height: 20),
+
             _buildLabel("Indikator Perkembangan"),
             TextField(
               controller: _indikatorController,
