@@ -5,6 +5,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/api_services/api_service.dart';
+import '../models/siswa_model.dart';
+
 class ScanPenjemputanPage extends StatefulWidget {
   const ScanPenjemputanPage({super.key});
 
@@ -13,18 +16,41 @@ class ScanPenjemputanPage extends StatefulWidget {
 }
 
 class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
-  // 1. Controller Tanpa Batasan Format (Biar lebih sensitif)
   final MobileScannerController controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.normal,
-    // formats: [BarcodeFormat.qrCode], // HAPUS INI (Saran Antigravity)
     returnImage: false,
     autoStart: true,
   );
 
   bool _isProcessing = false;
+  List<SiswaModel> _anakBelumDijemput = [];
+  bool _isLoadingSiswa = true;
 
-  // Area Scan (Kotak Tengah)
-  Rect? scanWindow;
+  @override
+  void initState() {
+    super.initState();
+    _fetchSiswaData();
+  }
+
+  Future<void> _fetchSiswaData() async {
+    try {
+      final listSiswa = await ApiService().getSiswa();
+      if (!mounted) return;
+      setState(() {
+        _anakBelumDijemput = listSiswa;
+        _isLoadingSiswa = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingSiswa = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal memuat data anak.')),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -32,7 +58,6 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
     super.dispose();
   }
 
-  // --- FUNGSI DETEKSI ---
   void _onDetect(BarcodeCapture capture) async {
     if (_isProcessing) return;
 
@@ -41,41 +66,120 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
       if (barcode.rawValue != null) {
         String code = barcode.rawValue!;
 
-        // Bersihkan data kalau ada prefix
         if (code.startsWith("SISWA-")) {
           code = code.replaceAll("SISWA-", "");
         }
-
-        print("QR DITEMUKAN: $code");
 
         setState(() {
           _isProcessing = true;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "Memproses ID: $code...",
-              style: GoogleFonts.poppins(),
+        try {
+          // Cari data anak dari list
+          final siswa = _anakBelumDijemput.firstWhere(
+            (s) => s.id.toString() == code,
+          );
+          
+          // Tampilkan Modal Konfirmasi
+          _tampilkanDialogKonfirmasi(siswa);
+        } catch (e) {
+          // Jika tidak ketemu
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                "QR Ditolak: Anak sudah dijemput sebelumnya atau ID tidak terdaftar!",
+                style: GoogleFonts.poppins(),
+              ),
+              backgroundColor: Colors.red,
             ),
-            backgroundColor: Colors.blue,
-            duration: const Duration(milliseconds: 500),
-          ),
-        );
-
-        await _kirimDataPenjemputan(code);
-        break;
+          );
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted) setState(() => _isProcessing = false);
+          });
+        }
+        break; // Hanya deteksi barcode pertama
       }
     }
   }
 
-  // --- FUNGSI KIRIM KE API ---
-  Future<void> _kirimDataPenjemputan(String siswaId) async {
+  void _tampilkanDialogKonfirmasi(SiswaModel siswa) {
+    String opsiPenjemput = 'Orang Tua';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              title: Text(
+                "Konfirmasi Jemput",
+                style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Nama Anak:", style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
+                  Text(siswa.namaSiswa ?? "-", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 15),
+                  Text("Status Penjemputan:", style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 5),
+                  DropdownButtonFormField<String>(
+                    value: opsiPenjemput,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                    items: ['Orang Tua', 'Diwakilkan'].map((String val) {
+                      return DropdownMenuItem(value: val, child: Text(val, style: GoogleFonts.poppins()));
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setDialogState(() {
+                          opsiPenjemput = val;
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Tutup dialog
+                    setState(() {
+                      _isProcessing = false;
+                    });
+                  },
+                  child: Text("Batal", style: GoogleFonts.poppins(color: Colors.red)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _kirimDataPenjemputan(siswa.id.toString(), opsiPenjemput);
+                  },
+                  child: Text("Konfirmasi Jemput", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _kirimDataPenjemputan(String siswaId, String opsiPenjemput) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
+    setState(() => _isProcessing = true);
+
     try {
-      // ⚠️ PASTIKAN IP LAPTOP BENAR
       final url = Uri.parse('http://192.168.18.36:8000/api/guru/scan-jemput');
 
       final response = await http
@@ -86,27 +190,32 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
             },
-            body: jsonEncode({'qr_code': siswaId}),
+            body: jsonEncode({
+              'qr_code': siswaId,
+              'status_penjemput': opsiPenjemput,
+            }),
           )
           .timeout(const Duration(seconds: 10));
 
-      print("Response Status: ${response.statusCode}");
-      print("Response Body: ${response.body}");
-
       if (response.statusCode == 200 || response.statusCode == 201) {
-        _showResultDialog(
-          "BERHASIL!",
-          "Data penjemputan siswa ID $siswaId tersimpan.",
-          true,
+        // Notifikasi Sukses
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Anak berhasil dijemput!", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            backgroundColor: Colors.green,
+          ),
         );
+        // Hapus data anak dari list state UI
+        setState(() {
+          _anakBelumDijemput.removeWhere((s) => s.id.toString() == siswaId);
+          _isProcessing = false;
+        });
       } else {
-        final msg =
-            jsonDecode(response.body)['message'] ?? "Gagal memproses data.";
+        final msg = jsonDecode(response.body)['message'] ?? "Gagal memproses data.";
         _showResultDialog("GAGAL", msg, false);
       }
     } catch (e) {
-      print("Error Scan: $e");
-      _showResultDialog("ERROR KONEKSI", "Gagal: $e", false);
+      _showResultDialog("ERROR", "Koneksi gagal: $e", false);
     }
   }
 
@@ -128,12 +237,8 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  Future.delayed(const Duration(seconds: 2), () {
-                    if (mounted) {
-                      setState(() {
-                        _isProcessing = false;
-                      });
-                    }
+                  setState(() {
+                    _isProcessing = false;
                   });
                 },
                 child: const Text("OK"),
@@ -145,17 +250,6 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Hitung area tengah layar untuk scanWindow
-    final scanAreaSize = 250.0;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    scanWindow = Rect.fromCenter(
-      center: Offset(screenWidth / 2, screenHeight / 2),
-      width: scanAreaSize,
-      height: scanAreaSize,
-    );
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -169,64 +263,64 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          // 1. KAMERA DENGAN SCAN WINDOW
-          MobileScanner(
-            controller: controller,
-            scanWindow: scanWindow, // HANYA SCAN DI TENGAH!
-            onDetect: _onDetect,
-          ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final scanWindow = Rect.fromCenter(
+            center: Offset(constraints.maxWidth / 2, constraints.maxHeight / 2),
+            width: 250,
+            height: 250,
+          );
 
-          // 2. OVERLAY KOTAK (Hiasan)
-          CustomPaint(painter: ScannerOverlay(scanWindow!)),
-
-          // 3. TEKS PETUNJUK
-          Positioned(
-            bottom: 100,
-            left: 0,
-            right: 0,
-            child: Text(
-              _isProcessing ? "Memproses..." : "Arahkan QR ke dalam kotak",
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+          return Stack(
+            children: [
+              MobileScanner(
+                controller: controller,
+                scanWindow: scanWindow,
+                onDetect: _onDetect,
               ),
-            ),
-          ),
-
-          // 4. LOADING
-          if (_isProcessing) const Center(child: CircularProgressIndicator()),
-        ],
+              CustomPaint(painter: ScannerOverlay(scanWindow)),
+              Positioned(
+                bottom: 100,
+                left: 0,
+                right: 0,
+                child: Text(
+                  _isProcessing ? "Memproses..." : "Arahkan QR ke dalam kotak",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              if (_isProcessing)
+                const Center(child: CircularProgressIndicator()),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
-// Widget Hiasan Kotak Scan
 class ScannerOverlay extends CustomPainter {
   final Rect scanWindow;
   ScannerOverlay(this.scanWindow);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final backgroundPath =
-        Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final backgroundPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
     final cutoutPath = Path()..addRect(scanWindow);
 
-    final backgroundPaint =
-        Paint()
-          ..color = Colors.black.withOpacity(0.5)
-          ..style = PaintingStyle.fill
-          ..blendMode = BlendMode.dstOut;
+    final backgroundPaint = Paint()
+      ..color = Colors.black.withOpacity(0.5)
+      ..style = PaintingStyle.fill
+      ..blendMode = BlendMode.dstOut;
 
-    final borderPaint =
-        Paint()
-          ..color = Colors.white
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3.0;
+    final borderPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0;
 
     canvas.drawPath(
       Path.combine(PathOperation.difference, backgroundPath, cutoutPath),

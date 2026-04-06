@@ -50,7 +50,7 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
     }
 
     if (token == null) {
-      _logout();
+      _prosesLogout();
       return;
     }
 
@@ -82,7 +82,7 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
     }
   }
 
-  Future<void> _logout() async {
+  Future<void> _prosesLogout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     if (!mounted) return;
@@ -90,6 +90,35 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
       context,
       MaterialPageRoute(builder: (context) => const LoginScreen()),
       (route) => false,
+    );
+  }
+
+  void _logout() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Konfirmasi Logout", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+          content: Text("Apakah Anda yakin ingin keluar dari aplikasi?", style: GoogleFonts.poppins()),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Tutup dialog
+              },
+              child: Text("Batal", style: GoogleFonts.poppins(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () {
+                Navigator.pop(context); // Tutup dialog
+                _prosesLogout(); // Eksekusi hapus session
+              },
+              child: Text("Ya, Keluar", style: GoogleFonts.poppins(color: Colors.white)),
+            ),
+          ],
+        );
+      },
     );
   }
 

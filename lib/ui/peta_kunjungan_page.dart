@@ -54,10 +54,11 @@ class _PetaKunjunganPageState extends State<PetaKunjunganPage> {
     }
 
     int totalMengajar = 0;
+    double g_n = 0.0;
 
     while (antrean.isNotEmpty) {
       Map<String, dynamic>? anakTerpilih;
-      double jarakMin = double.infinity;
+      double f_n_min = double.infinity;
 
       for (var anak in antrean) {
         if (anak['latitude'] == null || anak['longitude'] == null) continue;
@@ -65,12 +66,14 @@ class _PetaKunjunganPageState extends State<PetaKunjunganPage> {
         double latAnak = double.parse(anak['latitude'].toString());
         double lngAnak = double.parse(anak['longitude'].toString());
         
-        double jarak = math.sqrt(math.pow(latAnak - titikAwal.latitude, 2) + math.pow(lngAnak - titikAwal.longitude, 2));
+        double h_n = math.sqrt(math.pow(latAnak - titikAwal.latitude, 2) + math.pow(lngAnak - titikAwal.longitude, 2));
         
-        if (anak['is_priority'] == true) jarak -= 999999; 
+        double f_n = g_n + h_n;
         
-        if (jarak < jarakMin) {
-          jarakMin = jarak;
+        if (anak['is_priority'] == true) f_n -= 999999; 
+        
+        if (f_n < f_n_min) {
+          f_n_min = f_n;
           anakTerpilih = anak;
         }
       }
@@ -80,6 +83,7 @@ class _PetaKunjunganPageState extends State<PetaKunjunganPage> {
         antrean.remove(anakTerpilih);
         totalMengajar += anakTerpilih['durasi_mengajar'] as int;
         titikAwal = LatLng(double.parse(anakTerpilih['latitude'].toString()), double.parse(anakTerpilih['longitude'].toString()));
+        g_n = f_n_min;
       } else {
         break; 
       }

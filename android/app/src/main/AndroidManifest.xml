@@ -4,7 +4,7 @@
   <uses-feature android:name="android.hardware.camera" />
   
     <application
-        android:label="paud_mobile"
+        android:label="Simpaud"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true"

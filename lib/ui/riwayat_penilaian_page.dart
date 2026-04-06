@@ -32,14 +32,14 @@ class _RiwayatPenilaianPageState extends State<RiwayatPenilaianPage> {
     try {
       final responses = await Future.wait([
         http.get(
-          Uri.parse('http://192.168.18.36:8000/api/guru/anekdot'),
+          Uri.parse('https://paud.ghozifadhim.web.id/api/guru/anekdot'),
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
           },
         ),
         http.get(
-          Uri.parse('http://192.168.18.36:8000/api/guru/ceklis'),
+          Uri.parse('https://paud.ghozifadhim.web.id/api/guru/ceklis'),
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
