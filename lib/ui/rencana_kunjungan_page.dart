@@ -31,7 +31,7 @@ class _RencanaKunjunganPageState extends State<RencanaKunjunganPage> {
 
     try {
       // PASTIKAN IP INI SESUAI DENGAN LAPTOPMU
-      final url = Uri.parse('http://192.168.18.36:8000/api/siswa-saya');
+      final url = Uri.parse('http://paud.ghozifadhim.web.id/api/siswa-saya');
       final response = await http.get(url, headers: {'Authorization': 'Bearer $token'});
 
       if (!mounted) return;

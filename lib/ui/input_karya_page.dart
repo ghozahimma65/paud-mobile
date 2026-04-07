@@ -47,7 +47,7 @@ class _InputKaryaPageState extends State<InputKaryaPage> {
       // Karena ada upload file, kita pakai MultipartRequest
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.18.36:8000/api/guru/karya'), // GANTI IP
+        Uri.parse('http://paud.ghozifadhim.web.id/api/guru/karya'), // GANTI IP
       );
 
       request.headers['Authorization'] = 'Bearer $token';

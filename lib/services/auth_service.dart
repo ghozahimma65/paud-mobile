@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   // Pastikan IP ini benar (IP Laptop kamu)
-  final String baseUrl = "http://192.168.18.36:8000/api";
+  final String baseUrl = "http://paud.ghozifadhim.web.id/api";
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {

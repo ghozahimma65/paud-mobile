@@ -51,7 +51,7 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.18.36:8000/api/pengumuman'),
+        Uri.parse('http://paud.ghozifadhim.web.id/api/pengumuman'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',

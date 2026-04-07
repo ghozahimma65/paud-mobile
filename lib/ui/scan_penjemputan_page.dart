@@ -180,7 +180,7 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
     setState(() => _isProcessing = true);
 
     try {
-      final url = Uri.parse('http://192.168.18.36:8000/api/guru/scan-jemput');
+      final url = Uri.parse('http://paud.ghozifadhim.web.id/api/guru/scan-jemput');
 
       final response = await http
           .post(

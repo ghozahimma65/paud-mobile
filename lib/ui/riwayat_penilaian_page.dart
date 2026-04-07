@@ -46,7 +46,7 @@ class _RiwayatPenilaianPageState extends State<RiwayatPenilaianPage> {
           },
         ),
         http.get(
-          Uri.parse('http://192.168.18.36:8000/api/guru/karya'),
+          Uri.parse('https://paud.ghozifadhim.web.id/api/guru/karya'),
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',

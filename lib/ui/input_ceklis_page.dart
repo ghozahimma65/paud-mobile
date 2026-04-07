@@ -57,7 +57,7 @@ class _InputCeklisPageState extends State<InputCeklisPage> {
     try {
       final response = await http.post(
         Uri.parse(
-          'http://192.168.18.36:8000/api/guru/ceklis',
+          'http://paud.ghozifadhim.web.id/api/guru/ceklis',
         ), // Pastikan IP benar
         headers: {
           'Content-Type': 'application/json',

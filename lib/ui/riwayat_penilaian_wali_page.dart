@@ -45,7 +45,7 @@ class _RiwayatPenilaianWaliPageState extends State<RiwayatPenilaianWaliPage> {
       print("=== SUPER DEBUG: MULAI FETCH RIWAYAT ===");
       // Pastikan URL-nya benar menggunakan siswaId
       final url = Uri.parse(
-        'http://192.168.18.36:8000/api/wali/riwayat-anak/${widget.siswaId}',
+        'http://paud.ghozifadhim.web.id/api/wali/riwayat-anak/${widget.siswaId}',
       );
       print("TARGET URL: $url");
 

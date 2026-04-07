@@ -49,7 +49,7 @@ class _InputAnekdotPageState extends State<InputAnekdotPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.18.36:8000/api/guru/anekdot'),
+        Uri.parse('http://paud.ghozifadhim.web.id/api/guru/anekdot'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
