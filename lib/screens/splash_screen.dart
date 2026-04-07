@@ -56,7 +56,6 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Menggunakan background putih bersih seperti standar aplikasi profesional
       backgroundColor: Colors.white,
       body: Center(
         child: Column(
@@ -68,7 +67,7 @@ class _SplashScreenState extends State<SplashScreen> {
               width: 180,
               clipBehavior: Clip.hardEdge,
               decoration: BoxDecoration(
-                shape: BoxShape.circle, // Efek lingkaran (hanya opsional, image tetap di dalam)
+                shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.blue.withOpacity(0.1),
@@ -81,7 +80,6 @@ class _SplashScreenState extends State<SplashScreen> {
                 'assets/logo.png',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
-                  // Fallback icon jika file logo.png belum diletakkan user
                   return const Icon(Icons.error_outline, size: 80, color: Colors.grey);
                 },
               ),
@@ -109,7 +107,6 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             
             const SizedBox(height: 40),
-            // Indikator loading manis yang senada dengan biru elegan
             SizedBox(
               height: 24,
               width: 24,
