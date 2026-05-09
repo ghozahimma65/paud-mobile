@@ -51,7 +51,7 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://paud.ghozifadhim.web.id/api/pengumuman'),
+        Uri.parse('http://192.168.18.36:8000/api/pengumuman'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -202,35 +202,6 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 25),
-                  // SEARCH BAR DI DALAM HEADER
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: "Cari data siswa...",
-                        hintStyle: GoogleFonts.poppins(color: Colors.grey),
-                        prefixIcon: const Icon(
-                          Icons.search,
-                          color: Colors.purple,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 15,
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -250,7 +221,6 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
             ),
             const SizedBox(height: 10),
             Container(
-              height: 150,
               margin: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -265,15 +235,23 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
               ),
               child:
                   _loadingPengumuman
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const Padding(
+                          padding: EdgeInsets.all(30.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
                       : _listPengumuman.isEmpty
-                      ? Center(
-                        child: Text(
-                          "Tidak ada pengumuman terbaru",
-                          style: GoogleFonts.poppins(color: Colors.grey),
-                        ),
-                      )
+                      ? Padding(
+                          padding: const EdgeInsets.all(30.0),
+                          child: Center(
+                            child: Text(
+                              "Tidak ada pengumuman terbaru",
+                              style: GoogleFonts.poppins(color: Colors.grey),
+                            ),
+                          ),
+                        )
                       : ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
                         padding: const EdgeInsets.all(15),
                         itemCount: _listPengumuman.length,
                         separatorBuilder: (context, index) => const Divider(),
@@ -324,16 +302,15 @@ class _DashboardGuruPageState extends State<DashboardGuruPage> {
                                         fontSize: 14,
                                       ),
                                     ),
+                                    const SizedBox(height: 4),
                                     Text(
                                       item['isi'] ?? "-",
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
                                       style: GoogleFonts.poppins(
                                         fontSize: 12,
                                         color: Colors.grey.shade600,
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: 6),
                                     Text(
                                       tanggalInfo,
                                       style: GoogleFonts.poppins(

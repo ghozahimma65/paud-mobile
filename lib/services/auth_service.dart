@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'fcm_service.dart';
 
 class AuthService {
-  // Pastikan IP ini benar (IP Laptop kamu)
-  final String baseUrl = "http://paud.ghozifadhim.web.id/api";
+  final String baseUrl = "http://192.168.18.36:8000/api";
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
@@ -37,6 +37,10 @@ class AuthService {
         // Simpan token (buat jaga-jaga kalau nanti butuh)
         if (data['token'] != null) {
           await prefs.setString('token', data['token']);
+          
+          // --- UPDATE FCM TOKEN SETELAH LOGIN ---
+          // Kita panggil fungsi updateTokenToServer yang baru saja kita buat
+          await FcmService().updateTokenToServer();
         }
 
         return {'success': true, 'data': data['user'], 'token': data['token']};

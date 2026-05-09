@@ -70,6 +70,11 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
           code = code.replaceAll("SISWA-", "");
         }
 
+        String siswaIdStr = code;
+        if (code.contains("_")) {
+          siswaIdStr = code.split("_")[0];
+        }
+
         setState(() {
           _isProcessing = true;
         });
@@ -77,11 +82,11 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
         try {
           // Cari data anak dari list
           final siswa = _anakBelumDijemput.firstWhere(
-            (s) => s.id.toString() == code,
+            (s) => s.id.toString() == siswaIdStr,
           );
           
           // Tampilkan Modal Konfirmasi
-          _tampilkanDialogKonfirmasi(siswa);
+          _tampilkanDialogKonfirmasi(siswa, code);
         } catch (e) {
           // Jika tidak ketemu
           ScaffoldMessenger.of(context).showSnackBar(
@@ -102,7 +107,7 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
     }
   }
 
-  void _tampilkanDialogKonfirmasi(SiswaModel siswa) {
+  void _tampilkanDialogKonfirmasi(SiswaModel siswa, String fullQrCode) {
     String opsiPenjemput = 'Orang Tua';
 
     showDialog(
@@ -161,7 +166,7 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                   onPressed: () {
                     Navigator.pop(context);
-                    _kirimDataPenjemputan(siswa.id.toString(), opsiPenjemput);
+                    _kirimDataPenjemputan(fullQrCode, opsiPenjemput);
                   },
                   child: Text("Konfirmasi Jemput", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
@@ -173,14 +178,14 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
     );
   }
 
-  Future<void> _kirimDataPenjemputan(String siswaId, String opsiPenjemput) async {
+  Future<void> _kirimDataPenjemputan(String qrCodeData, String opsiPenjemput) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
     setState(() => _isProcessing = true);
 
     try {
-      final url = Uri.parse('http://paud.ghozifadhim.web.id/api/guru/scan-jemput');
+      final url = Uri.parse('http://192.168.18.36:8000/api/guru/scan-jemput');
 
       final response = await http
           .post(
@@ -191,7 +196,7 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
               'Accept': 'application/json',
             },
             body: jsonEncode({
-              'qr_code': siswaId,
+              'qr_code': qrCodeData,
               'status_penjemput': opsiPenjemput,
             }),
           )
@@ -207,7 +212,9 @@ class _ScanPenjemputanPageState extends State<ScanPenjemputanPage> {
         );
         // Hapus data anak dari list state UI
         setState(() {
-          _anakBelumDijemput.removeWhere((s) => s.id.toString() == siswaId);
+          // Karena qrCodeData bisa berisi "1_2026-05-06", kita split dulu untuk menghapus dari list
+          String idToRemove = qrCodeData.contains("_") ? qrCodeData.split("_")[0] : qrCodeData;
+          _anakBelumDijemput.removeWhere((s) => s.id.toString() == idToRemove);
           _isProcessing = false;
         });
       } else {

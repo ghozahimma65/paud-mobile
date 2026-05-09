@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "298286429422",
+    "project_id": "simpaudkartoharjo",
+    "storage_bucket": "simpaudkartoharjo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:298286429422:android:cc831cfabb6fda6120afff",
+        "android_client_info": {
+          "package_name": "com.example.paud_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDfm3is7npYRQrkpHMbNExRwa7T8WMjBEo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

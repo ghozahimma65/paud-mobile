@@ -5,6 +5,11 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'dart:ui' as ui;
+import 'dart:io';
+import 'package:flutter/rendering.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../screens/login_screen.dart';
 import '../services/api_services/api_service.dart';
@@ -24,9 +29,11 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
   // Data State
   String? namaWali;
   Map<String, dynamic>? siswaData;
-  Map<String, dynamic>? pengumumanData;
+  List<dynamic> _listPengumuman = [];
+  bool _loadingPengumuman = true;
   Map<String, dynamic>? penjemputanData;
   List<dynamic> progressData = [];
+  final GlobalKey _qrKey = GlobalKey();
 
   final ApiService _apiService = ApiService();
 
@@ -34,6 +41,35 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
   void initState() {
     super.initState();
     _fetchDashboardData();
+    _fetchPengumuman();
+  }
+
+  Future<void> _fetchPengumuman() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    try {
+      final response = await http.get(
+        // Note: Using api_service base URL for consistency, but the endpoint is /pengumuman
+        Uri.parse('${_apiService.baseUrl.replaceAll('/wali', '').replaceAll('/guru', '')}/pengumuman'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        setState(() {
+          _listPengumuman = jsonResponse['data'] ?? jsonResponse;
+          _loadingPengumuman = false;
+        });
+      } else {
+        setState(() => _loadingPengumuman = false);
+      }
+    } catch (e) {
+      setState(() => _loadingPengumuman = false);
+    }
   }
 
   Future<void> _fetchDashboardData() async {
@@ -67,7 +103,6 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
         final data = jsonDecode(response.body)['data'];
         setState(() {
           siswaData = data['siswa'];
-          pengumumanData = data['pengumuman'];
           progressData = data['progress'] ?? [];
           penjemputanData = data['penjemputan_terakhir'];
           _isLoading = false;
@@ -122,10 +157,33 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
     );
   }
 
-  // 2. SMART NOTIFICATION: Cek apakah sudah waktunya menjemput (Jam >= 11:00)
   bool _isWaktuPulang() {
     final now = DateTime.now();
     return now.hour >= 11;
+  }
+
+  Future<void> _shareQRCode() async {
+    try {
+      RenderRepaintBoundary boundary =
+          _qrKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final pngBytes = byteData!.buffer.asUint8List();
+
+      final tempDir = await getTemporaryDirectory();
+      final file = await File('${tempDir.path}/qr_penjemputan.png').create();
+      await file.writeAsBytes(pngBytes);
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'QR Code Penjemputan Ananda ${siswaData!['nama']}',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal membagikan QR Code: $e')),
+      );
+    }
   }
 
   @override
@@ -163,12 +221,10 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
                               const SizedBox(height: 30),
                             ],
 
-                            if (pengumumanData != null) ...[
-                              _buildSectionTitle("Pengumuman Terbaru"),
-                              const SizedBox(height: 15),
-                              _buildPengumumanCard(),
-                              const SizedBox(height: 30),
-                            ],
+                            _buildSectionTitle("Informasi Sekolah"),
+                            const SizedBox(height: 15),
+                            _buildPengumumanCard(),
+                            const SizedBox(height: 30),
 
                             _buildSectionTitle("Progress Perkembangan"),
                             const SizedBox(height: 15),
@@ -374,19 +430,40 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
               ),
             ),
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200),
+          RepaintBoundary(
+            key: _qrKey,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: QrImageView(
+                data:
+                    "SISWA-${siswaData!['id']}_${DateFormat('yyyy-MM-dd').format(DateTime.now())}",
+                version: QrVersions.auto,
+                size: 200.0,
+                backgroundColor: Colors.white,
+                padding: const EdgeInsets.all(20),
+              ),
             ),
-            child: QrImageView(
-              data:
-                  "SISWA-${siswaData!['id']}", // QR Code berisikan SISWA-sekian
-              version: QrVersions.auto,
-              size: 200.0,
-              backgroundColor: Colors.white,
-              padding: const EdgeInsets.all(20),
+          ),
+          const SizedBox(height: 15),
+          ElevatedButton.icon(
+            onPressed: _shareQRCode,
+            icon: const Icon(Icons.share, size: 18),
+            label: Text(
+              "Bagikan QR Code",
+              style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue.shade50,
+              foregroundColor: Colors.blue.shade700,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
           ),
           const SizedBox(height: 15),
@@ -418,7 +495,7 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
                 Icon(Icons.history, size: 14, color: Colors.green.shade600),
                 const SizedBox(width: 5),
                 Text(
-                  "Penjemputan Terakhir: ${DateFormat('dd MMM HH:mm').format(DateTime.parse(penjemputanData!['created_at']))}",
+                  "Penjemputan Terakhir: ${DateFormat('dd MMM HH:mm').format(DateTime.parse(penjemputanData!['created_at']).toUtc().add(const Duration(hours: 7)))} WIB",
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.green.shade700,
@@ -511,6 +588,17 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
                         color: color,
                       ),
                     ),
+                    if (item['narasi'] != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        item['narasi'],
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               );
@@ -652,65 +740,112 @@ class _DashboardWaliPageState extends State<DashboardWaliPage> {
 
   // --- PENGUMUMAN WIDGET ---
   Widget _buildPengumumanCard() {
-    String tglMulai = "-";
-    if (pengumumanData!['tanggal_mulai'] != null) {
-      tglMulai = DateFormat(
-        'dd MMM yyyy',
-      ).format(DateTime.parse(pengumumanData!['tanggal_mulai']));
-    }
-
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.blue.shade100),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.push_pin, color: Colors.blue.shade700, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  pengumumanData!['judul'] ?? "Pengumuman",
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: Colors.blue.shade900,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            pengumumanData!['isi'] ?? "-",
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: Colors.blue.shade800,
-            ),
-          ),
-          const SizedBox(height: 15),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Icon(Icons.calendar_today, size: 12, color: Colors.blue.shade400),
-              const SizedBox(width: 5),
-              Text(
-                tglMulai,
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  color: Colors.blue.shade700,
-                ),
-              ),
-            ],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
+      child:
+          _loadingPengumuman
+              ? const Padding(
+                  padding: EdgeInsets.all(30.0),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              : _listPengumuman.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.all(30.0),
+                  child: Center(
+                    child: Text(
+                      "Tidak ada pengumuman terbaru",
+                      style: GoogleFonts.poppins(color: Colors.grey),
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(15),
+                itemCount: _listPengumuman.length,
+                separatorBuilder: (context, index) => const Divider(),
+                itemBuilder: (context, index) {
+                  final item = _listPengumuman[index];
+
+                  String formatTgl(String? tgl) {
+                    if (tgl == null) return "";
+                    try {
+                      return DateFormat(
+                        'dd MMM yyyy',
+                      ).format(DateTime.parse(tgl));
+                    } catch (e) {
+                      return tgl.split('T')[0];
+                    }
+                  }
+
+                  String tanggalInfo = formatTgl(item['tanggal_mulai']);
+                  if (item['tanggal_mulai'] != null &&
+                      item['tanggal_selesai'] != null) {
+                    tanggalInfo =
+                        "${formatTgl(item['tanggal_mulai'])} s/d ${formatTgl(item['tanggal_selesai'])}";
+                  }
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.campaign,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item['judul'] ?? "Tanpa Judul",
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: Colors.blue.shade900,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              item['isi'] ?? "-",
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: Colors.blue.shade800,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              tanggalInfo,
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                color: Colors.blue.shade400,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
     );
   }
 }

@@ -247,7 +247,7 @@ class _InputRapotPageState extends State<InputRapotPage> {
                       _buildTextArea("Jati Diri", _jatiDiriCtrl),
                       _buildTextArea("Literasi & STEAM", _literasiCtrl),
                       _buildTextArea("Kokurikuler / P5", _kokurikulerCtrl),
-                      _buildTextArea("Pesan & Catatan Guru", _catatanGuruCtrl),
+                      // _buildTextArea("Pesan & Catatan Guru", _catatanGuruCtrl), // Disembunyikan karena tidak ada di bagian wali murid
 
                       const SizedBox(height: 24),
                       _buildSectionHeader("Pertumbuhan Fisik"),
